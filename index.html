@@ -106,6 +106,18 @@
     const entryPassword = document.querySelector('#entryPassword');
     const lockError = document.querySelector('#lockError');
 
+    entryPassword.addEventListener('input', () => {
+      lockError.textContent = '';
+      if (entryPassword.value.length === 4) {
+        if (entryPassword.value === '6668') {
+          lockScreen.hidden = true;
+          appMain.hidden = false;
+        } else {
+          lockError.textContent = '密码不正确，请重试';
+        }
+      }
+    });
+
     lockForm.addEventListener('submit', event => {
       event.preventDefault();
       if (entryPassword.value === '6668') {
