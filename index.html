@@ -35,6 +35,8 @@
     .list-head { display: flex; align-items: baseline; justify-content: space-between; padding: 19px 20px 14px; }
     h2 { margin: 0; font-size: 17px; }
     .count { color: #7a859a; font-size: 13px; }
+    .list-tools { display: flex; align-items: center; gap: 12px; }
+    .transfer-button { padding: 6px 10px; font-size: 12px; }
     .empty { padding: 36px 20px 40px; color: #8590a4; text-align: center; font-size: 14px; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -96,7 +98,7 @@
     </section>
 
     <section class="list" aria-label="行程列表">
-      <div class="list-head"><h2>行程安排</h2><span id="count" class="count">0 项活动</span></div>
+      <div class="list-head"><h2>行程安排</h2><div class="list-tools"><span id="count" class="count">0 项活动</span><button id="importLocalData" class="transfer-button" type="button">导入本地数据</button><input id="importLocalDataFile" type="file" accept=".json,application/json" hidden></div></div>
       <div id="schedule"></div>
     </section>
   </main>
@@ -428,6 +430,43 @@
       preview.textContent = '识别后会显示在这里';
       render();
       input.focus();
+    });
+
+    const importLocalDataFile = document.querySelector('#importLocalDataFile');
+    document.querySelector('#importLocalData').addEventListener('click', () => importLocalDataFile.click());
+    importLocalDataFile.addEventListener('change', async () => {
+      const file = importLocalDataFile.files && importLocalDataFile.files[0];
+      if (!file) return;
+      try {
+        const imported = JSON.parse(await file.text());
+        if (!Array.isArray(imported)) throw new Error('invalid file');
+        const normalized = imported.filter(item => item && typeof item === 'object' && !Array.isArray(item)).map(item => ({
+          date: String(item.date || ''),
+          time: String(item.time || ''),
+          start: Number.isFinite(Number(item.start)) ? Number(item.start) : 9999,
+          place: String(item.place || ''),
+          people: String(item.people || ''),
+          contact: String(item.contact || ''),
+          note: String(item.note || ''),
+          raw: String(item.raw || '')
+        }));
+        const current = getActivities();
+        const key = item => JSON.stringify([item.date, item.time, item.start, item.place, item.people, item.contact, item.note, item.raw]);
+        const seen = new Set(current.map(key));
+        const additions = normalized.filter(item => {
+          const itemKey = key(item);
+          if (seen.has(itemKey)) return false;
+          seen.add(itemKey);
+          return true;
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(current.concat(additions)));
+        render();
+        alert('导入完成：新增 ' + additions.length + ' 项，跳过重复 ' + (normalized.length - additions.length) + ' 项。');
+      } catch (error) {
+        alert('导入失败，请选择“导出本地数据”生成的 JSON 文件。');
+      } finally {
+        importLocalDataFile.value = '';
+      }
     });
 
     repairSavedDates();
