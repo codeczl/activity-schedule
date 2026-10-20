@@ -11,6 +11,15 @@
     main { width: min(1800px, calc(100% - 32px)); margin: 32px auto; }
     h1 { margin: 0 0 8px; font-size: 28px; font-weight: 700; letter-spacing: .02em; }
     .intro { margin: 0 0 24px; color: #65718a; font-size: 14px; }
+    .lock-screen { position: fixed; z-index: 10; inset: 0; display: grid; place-items: center; padding: 20px; background: #f4f6fa; }
+    .lock-card { width: min(360px, 100%); padding: 26px; background: #fff; border: 1px solid #e2e7f0; border-radius: 14px; box-shadow: 0 8px 28px #23395b12; }
+    .lock-card h1 { margin: 0 0 8px; font-size: 22px; }
+    .lock-card p { margin: 0 0 20px; color: #65718a; font-size: 14px; }
+    .lock-card label { margin-bottom: 8px; }
+    .lock-input { width: 100%; height: 44px; padding: 0 12px; border: 1px solid #d6ddea; border-radius: 8px; color: #17233b; font: inherit; letter-spacing: .2em; }
+    .lock-input:focus { border-color: #5378dc; outline: none; box-shadow: 0 0 0 3px #5378dc1c; }
+    .lock-submit { width: 100%; margin-top: 14px; }
+    .lock-error { min-height: 20px; margin-top: 10px; color: #c33a46; font-size: 13px; }
     .entry, .list { background: #fff; border: 1px solid #e2e7f0; border-radius: 14px; box-shadow: 0 5px 18px #23395b0a; }
     .entry { padding: 20px; }
     label { display: block; margin-bottom: 9px; font-size: 14px; font-weight: 650; }
@@ -62,7 +71,17 @@
   </style>
 </head>
 <body>
-  <main>
+  <section id="lockScreen" class="lock-screen" aria-label="进入密码">
+    <form id="lockForm" class="lock-card">
+      <h1>活动行程表</h1>
+      <p>请输入密码后进入</p>
+      <label for="entryPassword">进入密码</label>
+      <input id="entryPassword" class="lock-input" type="password" inputmode="numeric" autocomplete="current-password" autofocus required>
+      <button class="lock-submit" type="submit">进入</button>
+      <div id="lockError" class="lock-error" role="alert" aria-live="polite"></div>
+    </form>
+  </section>
+  <main id="appMain" hidden>
     <h1>活动行程表</h1>
     <p class="intro">粘贴活动文案，自动提取时间、地点和人数，并按时间排列。</p>
 
@@ -81,6 +100,23 @@
     </section>
   </main>
   <script>
+    const lockScreen = document.querySelector('#lockScreen');
+    const appMain = document.querySelector('#appMain');
+    const lockForm = document.querySelector('#lockForm');
+    const entryPassword = document.querySelector('#entryPassword');
+    const lockError = document.querySelector('#lockError');
+
+    lockForm.addEventListener('submit', event => {
+      event.preventDefault();
+      if (entryPassword.value === '6668') {
+        lockScreen.hidden = true;
+        appMain.hidden = false;
+      } else {
+        lockError.textContent = '密码不正确，请重试';
+        entryPassword.select();
+      }
+    });
+
     const STORAGE_KEY = 'simple-activity-schedule-v1';
     const input = document.querySelector('#activityText');
     const preview = document.querySelector('#preview');
